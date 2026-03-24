@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NEXUS ARCADE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#050810;--bg2:#080d1a;--panel:rgba(10,18,40,0.88);--border:rgba(0,200,255,0.18);
+  --neon:#00c8ff;--neon2:#ff2d78;--neon3:#00ff9d;--gold:#ffd700;
+  --text:#c8e0f4;--text-dim:#5a7a9a;--glass:rgba(10,20,50,0.7);--radius:14px;
+  --font-display:'Orbitron',monospace;--font-mono:'Share Tech Mono',monospace;--font-body:'Rajdhani',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;min-height:100vh;overflow-x:hidden}
+body{background:var(--bg);font-family:var(--font-body);color:var(--text);position:relative}
+
+/* BG FX */
+.bg-grid{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,200,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.035) 1px,transparent 1px);
+  background-size:48px 48px;animation:gridPulse 9s ease-in-out infinite}
+@keyframes gridPulse{0%,100%{opacity:.4}50%{opacity:.9}}
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 50% -10%,rgba(0,200,255,0.09) 0%,transparent 70%),
+             radial-gradient(ellipse 40% 30% at 90% 110%,rgba(255,45,120,0.07) 0%,transparent 70%)}
+.scan-line{position:fixed;top:0;left:0;width:100%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--neon),transparent);
+  opacity:.15;animation:scan 6s linear infinite;z-index:1;pointer-events:none}
+@keyframes scan{0%{top:0}100%{top:100%}}
+
+/* HEADER */
+header{position:relative;z-index:10;padding:18px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);background:var(--panel);backdrop-filter:blur(24px)}
+.logo{font-family:var(--font-display);font-size:1.6rem;font-weight:900;letter-spacing:.2em;
+  background:linear-gradient(90deg,var(--neon),var(--neon2),var(--neon3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo span{font-size:.65rem;letter-spacing:.35em;display:block;
+  -webkit-text-fill-color:var(--text-dim);color:var(--text-dim);margin-top:2px}
+.header-nav{display:flex;gap:10px;align-items:center}
+.nav-btn{font-family:var(--font-display);font-size:.6rem;letter-spacing:.12em;
+  padding:8px 18px;border-radius:6px;border:1px solid var(--border);
+  background:var(--glass);color:var(--neon);cursor:pointer;transition:all .2s;white-space:nowrap}
+.nav-btn:hover{background:rgba(0,200,255,0.15);border-color:var(--neon);box-shadow:0 0 16px rgba(0,200,255,0.3)}
+.nav-btn.active{background:rgba(0,200,255,0.2);border-color:var(--neon);box-shadow:0 0 12px rgba(0,200,255,0.4)}
+
+/* HERO */
+.hero{position:relative;z-index:5;text-align:center;padding:60px 20px 40px;
+  max-width:900px;margin:0 auto}
+.hero-title{font-family:var(--font-display);font-size:clamp(2rem,6vw,4rem);font-weight:900;
+  letter-spacing:.15em;line-height:1.1;
+  background:linear-gradient(135deg,var(--neon) 0%,#fff 50%,var(--neon2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:titleGlow 3s ease-in-out infinite alternate;filter:drop-shadow(0 0 30px rgba(0,200,255,0.3))}
+@keyframes titleGlow{from{filter:drop-shadow(0 0 20px rgba(0,200,255,0.3))}to{filter:drop-shadow(0 0 50px rgba(0,200,255,0.6))}}
+.hero-sub{font-family:var(--font-mono);font-size:.85rem;color:var(--text-dim);letter-spacing:.2em;margin-top:12px}
+
+/* STATS ROW */
+.stats-row{position:relative;z-index:5;display:flex;justify-content:center;gap:24px;
+  padding:0 20px 40px;flex-wrap:wrap}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:14px 28px;text-align:center;backdrop-filter:blur(16px)}
+.stat-val{font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--neon);
+  text-shadow:0 0 20px rgba(0,200,255,0.5)}
+.stat-label{font-size:.65rem;color:var(--text-dim);letter-spacing:.2em;margin-top:2px}
+
+/* GAMES GRID */
+.section{position:relative;z-index:5;padding:0 40px 60px;max-width:1400px;margin:0 auto}
+.section-title{font-family:var(--font-display);font-size:.75rem;letter-spacing:.25em;
+  color:var(--neon);text-transform:uppercase;margin-bottom:24px;
+  display:flex;align-items:center;gap:12px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+
+.game-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:0;overflow:hidden;cursor:pointer;transition:all .3s;
+  backdrop-filter:blur(16px);position:relative;
+  display:flex;flex-direction:column}
+.game-card:hover{border-color:var(--neon);transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.5),0 0 30px rgba(0,200,255,0.15)}
+.game-card:hover .game-thumb{filter:brightness(1.2)}
+
+.game-thumb{height:160px;display:flex;align-items:center;justify-content:center;
+  font-size:5rem;position:relative;overflow:hidden;transition:filter .3s;
+  background:linear-gradient(135deg,rgba(0,200,255,0.06),rgba(255,45,120,0.06))}
+.game-thumb::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(0,200,255,0.12),transparent 70%)}
+.game-thumb .emoji{position:relative;z-index:1;filter:drop-shadow(0 0 20px rgba(0,200,255,0.4));
+  animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.game-card:nth-child(2) .game-thumb{background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(255,215,0,0.06))}
+.game-card:nth-child(2) .game-thumb::before{background:radial-gradient(circle,rgba(255,45,120,0.12),transparent 70%)}
+.game-card:nth-child(3) .game-thumb{background:linear-gradient(135deg,rgba(0,255,157,0.06),rgba(0,200,255,0.06))}
+.game-card:nth-child(3) .game-thumb::before{background:radial-gradient(circle,rgba(0,255,157,0.12),transparent 70%)}
+.game-card:nth-child(4) .game-thumb{background:linear-gradient(135deg,rgba(255,215,0,0.06),rgba(255,45,120,0.06))}
+.game-card:nth-child(4) .game-thumb::before{background:radial-gradient(circle,rgba(255,215,0,0.12),transparent 70%)}
+
+.game-info{padding:18px;flex:1;display:flex;flex-direction:column;gap:8px}
+.game-name{font-family:var(--font-display);font-size:.9rem;font-weight:700;letter-spacing:.1em;color:var(--text)}
+.game-desc{font-size:.85rem;color:var(--text-dim);line-height:1.5}
+.game-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tag{font-family:var(--font-mono);font-size:.55rem;letter-spacing:.1em;
+  padding:3px 8px;border-radius:4px;border:1px solid var(--border);color:var(--text-dim)}
+.tag.hot{border-color:rgba(255,45,120,0.4);color:var(--neon2)}
+.tag.new{border-color:rgba(0,255,157,0.4);color:var(--neon3)}
+.game-footer{padding:12px 18px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.play-btn{font-family:var(--font-display);font-size:.6rem;letter-spacing:.15em;
+  padding:8px 20px;border-radius:6px;border:1px solid var(--neon);
+  background:rgba(0,200,255,0.1);color:var(--neon);cursor:pointer;transition:all .2s}
+.play-btn:hover{background:rgba(0,200,255,0.25);box-shadow:0 0 20px rgba(0,200,255,0.3)}
+.players-online{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim)}
+.online-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--neon3);margin-right:5px;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* LEADERBOARD SECTION */
+.leaderboard{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;backdrop-filter:blur(16px)}
+.lb-row{display:grid;grid-template-columns:40px 1fr 60px 60px 60px;
+  gap:8px;align-items:center;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:.8rem;transition:background .2s}
+.lb-row:hover{background:rgba(0,200,255,0.05)}
+.lb-row.header{font-family:var(--font-display);font-size:.55rem;letter-spacing:.15em;
+  color:var(--text-dim);border-bottom:1px solid var(--border);padding-bottom:12px}
+.lb-rank{font-family:var(--font-display);font-size:.8rem;font-weight:700;color:var(--text-dim);text-align:center}
+.lb-rank.gold{color:var(--gold);text-shadow:0 0 10px rgba(255,215,0,0.5)}
+.lb-rank.silver{color:#c0c0c0}
+.lb-rank.bronze{color:#cd7f32}
+.lb-name{font-weight:600;color:var(--text)}
+.lb-stat{font-family:var(--font-mono);font-size:.75rem;text-align:center;color:var(--text-dim)}
+.lb-stat.wins{color:var(--neon3)}
+
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);
+  align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:32px;max-width:480px;width:90%;backdrop-filter:blur(24px);
+  box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 60px rgba(0,200,255,0.08)}
+.modal h2{font-family:var(--font-display);font-size:1rem;letter-spacing:.15em;color:var(--neon);margin-bottom:20px}
+.modal-input{width:100%;background:var(--glass);border:1px solid var(--border);
+  border-radius:8px;padding:12px 16px;color:var(--text);font-family:var(--font-mono);font-size:.85rem;
+  outline:none;transition:border-color .2s;margin-bottom:12px}
+.modal-input:focus{border-color:var(--neon)}
+.modal-row{display:flex;gap:10px;margin-top:8px}
+.btn-modal{flex:1;font-family:var(--font-display);font-size:.6rem;letter-spacing:.12em;
+  padding:12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--glass);color:var(--neon);cursor:pointer;transition:all .2s}
+.btn-modal:hover{background:rgba(0,200,255,0.2);border-color:var(--neon);box-shadow:0 0 20px rgba(0,200,255,0.3)}
+.btn-modal.cancel{color:var(--text-dim)}
+.btn-modal.cancel:hover{background:rgba(255,255,255,0.05);border-color:var(--text-dim);box-shadow:none}
+.room-code{font-family:var(--font-display);font-size:2.5rem;font-weight:900;
+  color:var(--neon);text-align:center;letter-spacing:.3em;padding:20px;
+  background:rgba(0,200,255,0.05);border:1px solid rgba(0,200,255,0.2);border-radius:10px;
+  margin:12px 0;text-shadow:0 0 30px rgba(0,200,255,0.6)}
+.modal-note{font-size:.75rem;color:var(--text-dim);text-align:center;margin-top:8px;line-height:1.6}
+
+/* TOAST */
+#toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:12px 24px;font-family:var(--font-mono);font-size:.75rem;color:var(--neon);
+  opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* PAGE VIEWS */
+.page{display:none}.page.active{display:block}
+.game-iframe-wrapper{position:relative;z-index:5;padding:0 20px 40px;max-width:1400px;margin:0 auto}
+.game-iframe-header{display:flex;align-items:center;gap:16px;padding:16px 0 20px}
+.back-btn{font-family:var(--font-display);font-size:.6rem;letter-spacing:.12em;
+  padding:8px 16px;border-radius:6px;border:1px solid var(--border);
+  background:var(--glass);color:var(--text-dim);cursor:pointer;transition:all .2s}
+.back-btn:hover{border-color:var(--neon);color:var(--neon)}
+.game-frame-title{font-family:var(--font-display);font-size:.9rem;font-weight:700;letter-spacing:.15em;color:var(--text)}
+.game-container{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;min-height:600px}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="scan-line"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo" onclick="showPage('home')" style="cursor:pointer">
+    NEXUS ARCADE
+    <span>MULTI-GAME PLATFORM v2.0</span>
+  </div>
+  <nav class="header-nav">
+    <button class="nav-btn active" onclick="showPage('home')">🏠 HOME</button>
+    <button class="nav-btn" onclick="showPage('leaderboard-page')">🏆 LEADERBOARD</button>
+    <button class="nav-btn" onclick="openMultiplayerModal()">🌐 MULTIPLAYER</button>
+  </nav>
+</header>
+
+<!-- HOME PAGE -->
+<div id="home" class="page active">
+  <div class="hero">
+    <h1 class="hero-title">PLAY. COMPETE.<br>DOMINATE.</h1>
+    <p class="hero-sub">// NEXT-GEN BROWSER GAMING PLATFORM //</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val" id="stat-games-played">0</div>
+      <div class="stat-label">GAMES PLAYED</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-wins">0</div>
+      <div class="stat-label">TOTAL WINS</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-streak">0</div>
+      <div class="stat-label">WIN STREAK</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--neon3)">4</div>
+      <div class="stat-label">GAMES AVAILABLE</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">SELECT GAME</div>
+    <div class="games-grid">
+
+      <!-- CHESS -->
+      <div class="game-card" onclick="launchGame('chess')">
+        <div class="game-thumb"><div class="emoji">♟️</div></div>
+        <div class="game-info">
+          <div class="game-name">NEXUS CHESS</div>
+          <div class="game-desc">Full chess engine with AI opponent, multiplayer, move history, and tactical analysis.</div>
+          <div class="game-tags">
+            <span class="tag hot">🔥 HOT</span>
+            <span class="tag">AI ENGINE</span>
+            <span class="tag">MULTIPLAYER</span>
+          </div>
+        </div>
+        <div class="game-footer">
+          <button class="play-btn">PLAY NOW</button>
+          <span class="players-online"><span class="online-dot"></span>42 online</span>
+        </div>
+      </div>
+
+      <!-- SNAKE -->
+      <div class="game-card" onclick="launchGame('snake')">
+        <div class="game-thumb"><div class="emoji">🐍</div></div>
+        <div class="game-info">
+          <div class="game-name">QUANTUM SNAKE</div>
+          <div class="game-desc">Classic snake reimagined with power-ups, obstacles, and leaderboard scoring.</div>
+          <div class="game-tags">
+            <span class="tag new">✨ NEW</span>
+            <span class="tag">HIGH SCORE</span>
+            <span class="tag">POWER-UPS</span>
+          </div>
+        </div>
+        <div class="game-footer">
+          <button class="play-btn" style="border-color:var(--neon2);color:var(--neon2);background:rgba(255,45,120,0.1)">PLAY NOW</button>
+          <span class="players-online"><span class="online-dot"></span>18 online</span>
+        </div>
+      </div>
+
+      <!-- MEMORY -->
+      <div class="game-card" onclick="launchGame('memory')">
+        <div class="game-thumb"><div class="emoji">🧠</div></div>
+        <div class="game-info">
+          <div class="game-name">MEMORY MATRIX</div>
+          <div class="game-desc">Flip cards to find matches before time runs out. Multiple difficulty levels.</div>
+          <div class="game-tags">
+            <span class="tag">CASUAL</span>
+            <span class="tag">TIMED</span>
+            <span class="tag">LEVELS</span>
+          </div>
+        </div>
+        <div class="game-footer">
+          <button class="play-btn" style="border-color:var(--neon3);color:var(--neon3);background:rgba(0,255,157,0.08)">PLAY NOW</button>
+          <span class="players-online"><span class="online-dot"></span>7 online</span>
+        </div>
+      </div>
+
+      <!-- 2048 -->
+      <div class="game-card" onclick="launchGame('2048')">
+        <div class="game-thumb"><div class="emoji">🔢</div></div>
+        <div class="game-info">
+          <div class="game-name">NEXUS 2048</div>
+          <div class="game-desc">Slide tiles to merge and reach 2048. Compete for the highest score globally.</div>
+          <div class="game-tags">
+            <span class="tag">PUZZLE</span>
+            <span class="tag">HIGH SCORE</span>
+          </div>
+        </div>
+        <div class="game-footer">
+          <button class="play-btn" style="border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,0.08)">PLAY NOW</button>
+          <span class="players-online"><span class="online-dot"></span>11 online</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD PAGE -->
+<div id="leaderboard-page" class="page">
+  <div class="section" style="padding-top:40px">
+    <div class="section-title">LEADERBOARD</div>
+    <div class="leaderboard">
+      <div class="lb-row header">
+        <div>#</div><div>PLAYER</div><div>WINS</div><div>LOSSES</div><div>DRAWS</div>
+      </div>
+      <div id="lb-body">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME PAGE -->
+<div id="game-page" class="page">
+  <div class="game-iframe-wrapper">
+    <div class="game-iframe-header">
+      <button class="back-btn" onclick="showPage('home')">← BACK TO ARCADE</button>
+      <div class="game-frame-title" id="game-frame-title">GAME</div>
+    </div>
+    <div class="game-container" id="game-container"></div>
+  </div>
+</div>
+
+<!-- MULTIPLAYER MODAL -->
+<div class="modal-overlay" id="mp-modal">
+  <div class="modal">
+    <h2>🌐 MULTIPLAYER</h2>
+    <div id="mp-content">
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:20px;line-height:1.6">
+        Create a room and share the code with a friend, or join an existing room.
+      </p>
+      <input class="modal-input" id="mp-name" placeholder="YOUR NAME" maxlength="20"/>
+      <div class="modal-row">
+        <button class="btn-modal" onclick="createMPRoom()">CREATE ROOM</button>
+        <button class="btn-modal" onclick="showJoinRoom()">JOIN ROOM</button>
+      </div>
+      <div class="modal-row">
+        <button class="btn-modal cancel" onclick="closeModal('mp-modal')">CANCEL</button>
+      </div>
+    </div>
+    <div id="mp-room-created" style="display:none">
+      <div class="room-code" id="room-code-display">------</div>
+      <div class="modal-note">Share this code with your opponent.<br>Waiting for player 2...</div>
+      <div class="modal-row" style="margin-top:16px">
+        <button class="btn-modal" onclick="copyRoomCode()">COPY CODE</button>
+        <button class="btn-modal cancel" onclick="closeModal('mp-modal')">CLOSE</button>
+      </div>
+    </div>
+    <div id="mp-join" style="display:none">
+      <input class="modal-input" id="join-code" placeholder="ENTER ROOM CODE" maxlength="6"
+             style="font-family:var(--font-display);font-size:1.2rem;letter-spacing:.3em;text-align:center;text-transform:uppercase"/>
+      <div class="modal-row">
+        <button class="btn-modal" onclick="joinMPRoom()">JOIN GAME</button>
+        <button class="btn-modal cancel" onclick="showMPDefault()">BACK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── Page Navigation ─────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'leaderboard-page') populateLeaderboard();
+}
+
+// ─── Stats ────────────────────────────────────────────────────────
+function loadStats() {
+  try {
+    const s = JSON.parse(localStorage.getItem('nexus_global_stats') || '{}');
+    document.getElementById('stat-games-played').textContent = s.gamesPlayed || 0;
+    document.getElementById('stat-wins').textContent = s.wins || 0;
+    document.getElementById('stat-streak').textContent = s.streak || 0;
+  } catch(e) {}
+}
+loadStats();
+
+// ─── Game Launcher ────────────────────────────────────────────────
+const GAME_TITLES = { chess:'♟️ NEXUS CHESS', snake:'🐍 QUANTUM SNAKE', memory:'🧠 MEMORY MATRIX', '2048':'🔢 NEXUS 2048' };
+const GAME_FILES  = { chess:'games/chess.html', snake:'games/snake.html', memory:'games/memory.html', '2048':'games/2048.html' };
+
+function launchGame(game) {
+  showPage('game-page');
+  document.getElementById('game-frame-title').textContent = GAME_TITLES[game];
+  const container = document.getElementById('game-container');
+  container.innerHTML = `<iframe src="${GAME_FILES[game]}" style="width:100%;height:720px;border:none" allow="autoplay"></iframe>`;
+}
+
+// ─── Leaderboard ─────────────────────────────────────────────────
+function populateLeaderboard() {
+  const data = JSON.parse(localStorage.getItem('nexus_leaderboard') || '[]');
+  // Add demo data if empty
+  if (!data.length) {
+    const demo = [
+      {name:'CYPHER_ACE',wins:47,losses:12,draws:5},
+      {name:'GHOST_KNIGHT',wins:38,losses:18,draws:3},
+      {name:'NEON_BLADE',wins:29,losses:9,draws:11},
+      {name:'QUANTUM_X',wins:22,losses:14,draws:2},
+      {name:'SHADOW_PAWN',wins:15,losses:20,draws:7},
+    ];
+    localStorage.setItem('nexus_leaderboard', JSON.stringify(demo));
+    populateLeaderboard(); return;
+  }
+  const sorted = [...data].sort((a,b) => (b.wins*3+b.draws) - (a.wins*3+a.draws));
+  const medals = ['gold','silver','bronze'];
+  document.getElementById('lb-body').innerHTML = sorted.slice(0,20).map((p,i) => `
+    <div class="lb-row">
+      <div class="lb-rank ${medals[i]||''}">${i===0?'👑':i===1?'🥈':i===2?'🥉':i+1}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-stat wins">${p.wins}</div>
+      <div class="lb-stat">${p.losses}</div>
+      <div class="lb-stat">${p.draws}</div>
+    </div>`).join('');
+}
+
+// ─── Multiplayer Modal ────────────────────────────────────────────
+function openMultiplayerModal() {
+  document.getElementById('mp-modal').classList.add('show');
+  showMPDefault();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function showMPDefault() {
+  document.getElementById('mp-content').style.display='block';
+  document.getElementById('mp-room-created').style.display='none';
+  document.getElementById('mp-join').style.display='none';
+}
+function showJoinRoom() {
+  document.getElementById('mp-content').style.display='none';
+  document.getElementById('mp-join').style.display='block';
+}
+
+function createMPRoom() {
+  const name = document.getElementById('mp-name').value.trim() || 'PLAYER';
+  const code = Math.random().toString(36).slice(2,8).toUpperCase();
+  localStorage.setItem('nexus_room', JSON.stringify({ code, name, role:'host' }));
+  document.getElementById('room-code-display').textContent = code;
+  document.getElementById('mp-content').style.display='none';
+  document.getElementById('mp-room-created').style.display='block';
+}
+function copyRoomCode() {
+  const code = document.getElementById('room-code-display').textContent;
+  navigator.clipboard.writeText(code).then(() => toast('Room code copied!'));
+}
+function joinMPRoom() {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (!code || code.length < 4) { toast('Enter a valid room code'); return; }
+  toast(`Joining room ${code}...`);
+  setTimeout(() => { closeModal('mp-modal'); launchGame('chess'); }, 1000);
+}
+
+// ─── Toast ────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('show'); });
+});
+</script>
+</body>
+</html>

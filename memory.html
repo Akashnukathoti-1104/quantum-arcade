@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MEMORY MATRIX</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#050810;--neon:#00ff9d;--neon2:#00c8ff;--neon3:#ff2d78;--gold:#ffd700;
+  --panel:rgba(10,18,40,0.9);--border:rgba(0,255,157,0.2);--text:#b0ffd8;--text-dim:#3a7a5a;
+  --font-display:'Orbitron',monospace;--font-mono:'Share Tech Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;min-height:100vh;background:var(--bg);overflow-x:hidden}
+body{display:flex;flex-direction:column;align-items:center;font-family:var(--font-mono)}
+.bg-grid{position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,255,157,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,157,0.03) 1px,transparent 1px);
+  background-size:36px 36px}
+
+header{width:100%;padding:12px 28px;display:flex;justify-content:space-between;align-items:center;
+  background:var(--panel);border-bottom:1px solid var(--border);z-index:10;position:relative}
+.logo{font-family:var(--font-display);font-size:1rem;font-weight:900;letter-spacing:.2em;
+  background:linear-gradient(90deg,var(--neon),var(--neon2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hud{display:flex;gap:20px}
+.hud-box{text-align:center}
+.hud-label{font-size:.5rem;color:var(--text-dim);letter-spacing:.15em}
+.hud-val{font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--neon)}
+
+.main{display:flex;flex-direction:column;align-items:center;gap:16px;
+  padding:24px 16px;position:relative;z-index:5}
+
+/* Timer bar */
+.timer-bar-wrap{width:min(600px,95vw);height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+.timer-bar{height:100%;background:linear-gradient(90deg,var(--neon),var(--neon2));
+  transition:width .1s linear;border-radius:3px;
+  box-shadow:0 0 12px var(--neon)}
+
+/* Difficulty buttons */
+.diff-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.diff-btn{font-family:var(--font-display);font-size:.55rem;letter-spacing:.12em;
+  padding:7px 18px;border-radius:6px;border:1px solid var(--border);
+  background:rgba(0,255,157,0.05);color:var(--text-dim);cursor:pointer;transition:all .2s}
+.diff-btn.active{border-color:var(--neon);color:var(--neon);background:rgba(0,255,157,0.12);
+  box-shadow:0 0 12px rgba(0,255,157,0.2)}
+
+/* Cards grid */
+.cards-grid{display:grid;gap:10px;justify-content:center}
+
+.card{
+  width:70px;height:70px;position:relative;cursor:pointer;
+  transform-style:preserve-3d;transition:transform .4s cubic-bezier(.4,0,.2,1);
+}
+.card.flipped,.card.matched{transform:rotateY(180deg)}
+.card.matched{cursor:default}
+.card-face{
+  position:absolute;inset:0;backface-visibility:hidden;
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;user-select:none}
+.card-back{
+  background:rgba(0,20,40,0.8);
+  border:1px solid var(--border);
+  box-shadow:inset 0 0 20px rgba(0,255,157,0.05);
+}
+.card-back::before{
+  content:'?';font-family:var(--font-display);font-size:.9rem;
+  color:var(--text-dim);opacity:.4}
+.card-front{
+  background:rgba(10,30,60,0.95);
+  border:1px solid rgba(0,255,157,0.4);
+  box-shadow:0 0 16px rgba(0,255,157,0.15);
+  transform:rotateY(180deg);
+}
+.card.matched .card-front{
+  border-color:var(--neon);
+  box-shadow:0 0 24px rgba(0,255,157,0.4);
+  background:rgba(0,255,157,0.1);
+}
+.card.wrong .card-front{border-color:var(--neon3);box-shadow:0 0 16px rgba(255,45,120,0.4)}
+
+/* Overlay */
+.overlay{position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.overlay.hidden{display:none}
+.ov-title{font-family:var(--font-display);font-size:2rem;font-weight:900;letter-spacing:.2em;
+  color:var(--neon);text-shadow:0 0 30px rgba(0,255,157,0.5)}
+.ov-sub{font-size:.75rem;color:var(--text-dim);letter-spacing:.2em;text-align:center}
+.ov-stats{display:flex;gap:24px;margin:8px 0}
+.ov-stat{text-align:center}
+.ov-stat-val{font-family:var(--font-display);font-size:1.8rem;color:var(--neon)}
+.ov-stat-label{font-size:.6rem;color:var(--text-dim);letter-spacing:.15em}
+.ov-btn{font-family:var(--font-display);font-size:.65rem;letter-spacing:.15em;
+  padding:12px 28px;border-radius:8px;border:1px solid var(--neon);
+  background:rgba(0,255,157,0.1);color:var(--neon);cursor:pointer;transition:all .2s}
+.ov-btn:hover{background:rgba(0,255,157,0.25);box-shadow:0 0 24px rgba(0,255,157,0.3)}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<header>
+  <div class="logo">🧠 MEMORY MATRIX</div>
+  <div class="hud">
+    <div class="hud-box"><div class="hud-label">PAIRS</div><div class="hud-val" id="pairs-left">0</div></div>
+    <div class="hud-box"><div class="hud-label">MOVES</div><div class="hud-val" id="moves-count">0</div></div>
+    <div class="hud-box"><div class="hud-label">TIME</div><div class="hud-val" id="time-left" style="color:var(--neon2)">60</div></div>
+    <div class="hud-box"><div class="hud-label">SCORE</div><div class="hud-val" id="score" style="color:var(--gold)">0</div></div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="diff-row">
+    <button class="diff-btn active" data-diff="easy" onclick="setDiff('easy',this)">EASY (4×4)</button>
+    <button class="diff-btn" data-diff="medium" onclick="setDiff('medium',this)">MEDIUM (4×5)</button>
+    <button class="diff-btn" data-diff="hard" onclick="setDiff('hard',this)">HARD (5×6)</button>
+  </div>
+  <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+  <div class="cards-grid" id="cards-grid"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="ov-title" id="ov-title">MEMORY MATRIX</div>
+  <div class="ov-sub" id="ov-sub">MATCH ALL PAIRS BEFORE TIME RUNS OUT</div>
+  <div class="ov-stats" id="ov-stats" style="display:none">
+    <div class="ov-stat"><div class="ov-stat-val" id="ov-score">0</div><div class="ov-stat-label">SCORE</div></div>
+    <div class="ov-stat"><div class="ov-stat-val" id="ov-moves">0</div><div class="ov-stat-label">MOVES</div></div>
+    <div class="ov-stat"><div class="ov-stat-val" id="ov-time">0</div><div class="ov-stat-label">SECONDS LEFT</div></div>
+  </div>
+  <button class="ov-btn" id="ov-btn" onclick="startGame()">▶ START GAME</button>
+</div>
+
+<script>
+const EMOJIS = ['🎮','🕹️','🎯','🎲','🃏','🎴','♟️','🎭','🎪','🎬','🎸','🎺','🚀','🛸','⚡','🔮','💎','🌟','🔥','❄️','🌊','🌈','🦋','🦄','🐉','🦊','🐺','🌙'];
+
+const DIFFS = {
+  easy:   { cols:4, rows:4, time:60 },
+  medium: { cols:5, rows:4, time:75 },
+  hard:   { cols:6, rows:5, time:90 },
+};
+
+let diff = 'easy';
+let cards = [], flipped = [], matched = [], moves, timeLeft, timerInterval, totalPairs, score, gameActive;
+
+function setDiff(d, btn) {
+  diff = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - .5); }
+
+function startGame() {
+  document.getElementById('overlay').classList.add('hidden');
+  const { cols, rows, time } = DIFFS[diff];
+  const numPairs = (cols * rows) / 2;
+  totalPairs = numPairs;
+  const emojis = shuffle(EMOJIS).slice(0, numPairs);
+  const deck = shuffle([...emojis, ...emojis]);
+
+  cards = deck.map((emoji, i) => ({ id: i, emoji, flipped: false, matched: false }));
+  flipped = []; matched = []; moves = 0; timeLeft = time; score = 0; gameActive = true;
+
+  updateHUD();
+  renderGrid(cols, rows);
+
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (!gameActive) return;
+    timeLeft--;
+    updateHUD();
+    if (timeLeft <= 0) endGame(false);
+  }, 1000);
+}
+
+function renderGrid(cols, rows) {
+  const grid = document.getElementById('cards-grid');
+  grid.style.gridTemplateColumns = `repeat(${cols}, 70px)`;
+  grid.innerHTML = '';
+  cards.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `<div class="card-face card-back"></div><div class="card-face card-front">${card.emoji}</div>`;
+    el.addEventListener('click', () => flipCard(i, el));
+    grid.appendChild(el);
+  });
+}
+
+function flipCard(idx, el) {
+  if (!gameActive) return;
+  if (flipped.length >= 2) return;
+  if (cards[idx].flipped || cards[idx].matched) return;
+
+  cards[idx].flipped = true;
+  el.classList.add('flipped');
+  flipped.push({ idx, el });
+
+  if (flipped.length === 2) {
+    moves++;
+    updateHUD();
+    const [a, b] = flipped;
+    if (cards[a.idx].emoji === cards[b.idx].emoji) {
+      // Match!
+      setTimeout(() => {
+        a.el.classList.add('matched');
+        b.el.classList.add('matched');
+        cards[a.idx].matched = true;
+        cards[b.idx].matched = true;
+        matched.push(a.idx, b.idx);
+        score += Math.max(10, 50 - moves) + Math.floor(timeLeft / 2);
+        flipped = [];
+        updateHUD();
+        if (matched.length === cards.length) endGame(true);
+      }, 300);
+    } else {
+      // No match
+      setTimeout(() => {
+        a.el.classList.add('wrong'); b.el.classList.add('wrong');
+        setTimeout(() => {
+          cards[a.idx].flipped = false; cards[b.idx].flipped = false;
+          a.el.classList.remove('flipped','wrong');
+          b.el.classList.remove('flipped','wrong');
+          flipped = [];
+        }, 400);
+      }, 700);
+    }
+  }
+}
+
+function endGame(won) {
+  gameActive = false;
+  clearInterval(timerInterval);
+
+  const ov = document.getElementById('overlay');
+  ov.classList.remove('hidden');
+  document.getElementById('ov-title').textContent = won ? '🎉 YOU WIN!' : '⏰ TIME\'S UP!';
+  document.getElementById('ov-sub').textContent = won ? `All ${totalPairs} pairs matched!` : `${matched.length/2} of ${totalPairs} pairs found`;
+  document.getElementById('ov-stats').style.display = 'flex';
+  document.getElementById('ov-score').textContent = score;
+  document.getElementById('ov-moves').textContent = moves;
+  document.getElementById('ov-time').textContent = timeLeft;
+  document.getElementById('ov-btn').textContent = '↺ PLAY AGAIN';
+
+  try {
+    const s = JSON.parse(localStorage.getItem('nexus_global_stats') || '{}');
+    s.gamesPlayed = (s.gamesPlayed || 0) + 1;
+    if (won) s.wins = (s.wins || 0) + 1;
+    localStorage.setItem('nexus_global_stats', JSON.stringify(s));
+  } catch(e){}
+}
+
+function updateHUD() {
+  const pairsLeft = totalPairs - matched.length / 2;
+  document.getElementById('pairs-left').textContent = Math.round(pairsLeft);
+  document.getElementById('moves-count').textContent = moves;
+  document.getElementById('time-left').textContent = timeLeft;
+  document.getElementById('score').textContent = score;
+  const { time } = DIFFS[diff];
+  document.getElementById('timer-bar').style.width = `${(timeLeft / time) * 100}%`;
+  const pct = timeLeft / time;
+  document.getElementById('timer-bar').style.background =
+    pct > .5 ? 'linear-gradient(90deg,var(--neon),var(--neon2))' :
+    pct > .25 ? 'linear-gradient(90deg,var(--gold),var(--neon2))' :
+    'linear-gradient(90deg,var(--neon3),var(--gold))';
+  const timeEl = document.getElementById('time-left');
+  timeEl.style.color = pct > .3 ? 'var(--neon2)' : 'var(--neon3)';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QUANTUM SNAKE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#050810;--neon:#ff2d78;--neon2:#00c8ff;--neon3:#00ff9d;--gold:#ffd700;
+  --panel:rgba(10,18,40,0.9);--border:rgba(255,45,120,0.2);--text:#f0c0ff;--text-dim:#804090;
+  --font-display:'Orbitron',monospace;--font-mono:'Share Tech Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:var(--bg);overflow:hidden}
+body{display:flex;flex-direction:column;align-items:center;font-family:var(--font-mono)}
+.bg-grid{position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,45,120,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,45,120,0.03) 1px,transparent 1px);
+  background-size:32px 32px}
+header{width:100%;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;
+  background:var(--panel);border-bottom:1px solid var(--border);z-index:10}
+.logo{font-family:var(--font-display);font-size:1rem;font-weight:900;letter-spacing:.2em;
+  background:linear-gradient(90deg,var(--neon),var(--neon2));-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.score-area{display:flex;gap:24px}
+.score-box{text-align:center}
+.score-label{font-size:.55rem;color:var(--text-dim);letter-spacing:.15em}
+.score-val{font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--neon)}
+.score-val.best{color:var(--gold)}
+
+.game-area{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;gap:12px;position:relative;z-index:5}
+
+canvas{
+  border:2px solid var(--border);border-radius:8px;
+  box-shadow:0 0 40px rgba(255,45,120,0.2),inset 0 0 40px rgba(0,0,0,0.5);
+  display:block}
+
+.info-row{display:flex;gap:16px;align-items:center}
+.level-badge{font-family:var(--font-display);font-size:.6rem;letter-spacing:.15em;
+  padding:5px 14px;border-radius:20px;border:1px solid var(--border);color:var(--neon);
+  background:rgba(255,45,120,0.1)}
+.powerup-slot{display:flex;gap:8px}
+.pu-icon{font-size:1.2rem;filter:grayscale(1);opacity:.3;transition:all .3s}
+.pu-icon.active{filter:none;opacity:1;animation:pulsePU .6s ease-in-out infinite alternate}
+@keyframes pulsePU{from{transform:scale(1)}to{transform:scale(1.2)}}
+
+/* Controls hint */
+.controls-hint{font-size:.6rem;color:var(--text-dim);letter-spacing:.1em;display:flex;gap:12px}
+.ctrl{padding:3px 8px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-dim)}
+
+/* Overlay */
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:20;gap:16px}
+.overlay.hidden{display:none}
+.ov-title{font-family:var(--font-display);font-size:2rem;font-weight:900;letter-spacing:.2em;
+  background:linear-gradient(90deg,var(--neon),var(--neon2));-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.ov-sub{font-size:.8rem;color:var(--text-dim);letter-spacing:.2em}
+.ov-score{font-family:var(--font-display);font-size:3rem;font-weight:900;color:var(--neon);
+  text-shadow:0 0 30px rgba(255,45,120,0.6)}
+.ov-btn{font-family:var(--font-display);font-size:.7rem;letter-spacing:.15em;
+  padding:12px 32px;border-radius:8px;border:1px solid var(--neon);
+  background:rgba(255,45,120,0.15);color:var(--neon);cursor:pointer;
+  transition:all .2s;margin-top:8px}
+.ov-btn:hover{background:rgba(255,45,120,0.35);box-shadow:0 0 24px rgba(255,45,120,0.4)}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<header>
+  <div class="logo">⚡ QUANTUM SNAKE</div>
+  <div class="score-area">
+    <div class="score-box">
+      <div class="score-label">SCORE</div>
+      <div class="score-val" id="score">0</div>
+    </div>
+    <div class="score-box">
+      <div class="score-label">BEST</div>
+      <div class="score-val best" id="best">0</div>
+    </div>
+    <div class="score-box">
+      <div class="score-label">LEVEL</div>
+      <div class="score-val" id="level-display" style="color:var(--neon3)">1</div>
+    </div>
+  </div>
+</header>
+
+<div class="game-area">
+  <canvas id="canvas"></canvas>
+
+  <div class="info-row">
+    <div class="level-badge" id="level-badge">LEVEL 1</div>
+    <div class="powerup-slot">
+      <span class="pu-icon" id="pu-speed" title="Speed Boost">⚡</span>
+      <span class="pu-icon" id="pu-shield" title="Shield">🛡️</span>
+      <span class="pu-icon" id="pu-multi" title="Score x2">✨</span>
+      <span class="pu-icon" id="pu-slow" title="Slow Motion">🐢</span>
+    </div>
+  </div>
+
+  <div class="controls-hint">
+    <span class="ctrl">↑ ↓ ← →</span>
+    <span class="ctrl">WASD</span>
+    <span class="ctrl">SPACE = Pause</span>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="ov-title" id="ov-title">QUANTUM SNAKE</div>
+    <div class="ov-sub" id="ov-sub">AVOID WALLS • EAT FOOD • COLLECT POWER-UPS</div>
+    <div class="ov-score" id="ov-score" style="display:none"></div>
+    <button class="ov-btn" id="ov-btn" onclick="startGame()">▶ START GAME</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Sizing
+const CELL = 20;
+const COLS = 30, ROWS = 24;
+canvas.width = COLS * CELL;
+canvas.height = ROWS * CELL;
+
+// State
+let snake, dir, nextDir, food, powerups, score, bestScore, level, speed, gameLoop, paused, dead, shieldActive, multiActive, slowActive;
+
+const COLORS = {
+  head: '#ff2d78',
+  body: '#c01a55',
+  food: '#00c8ff',
+  wall: '#ff2d78',
+};
+
+const POWERUP_TYPES = [
+  { type: 'speed', icon: '⚡', color: '#ffd700', duration: 5000 },
+  { type: 'shield', icon: '🛡️', color: '#00ff9d', duration: 6000 },
+  { type: 'multi', icon: '✨', color: '#ff00c8', duration: 8000 },
+  { type: 'slow', icon: '🐢', color: '#00c8ff', duration: 5000 },
+];
+
+let activePUs = {};
+let PUTimers = {};
+
+function initGame() {
+  snake = [{ x: 15, y: 12 }, { x: 14, y: 12 }, { x: 13, y: 12 }];
+  dir = { x: 1, y: 0 };
+  nextDir = { x: 1, y: 0 };
+  powerups = [];
+  score = 0;
+  level = 1;
+  speed = 150;
+  paused = false;
+  dead = false;
+  activePUs = {};
+  shieldActive = false;
+  multiActive = false;
+  slowActive = false;
+  Object.values(PUTimers).forEach(clearTimeout);
+  PUTimers = {};
+  updateUI();
+  placeFood();
+  maybeSpawnPowerup();
+}
+
+function startGame() {
+  document.getElementById('overlay').classList.add('hidden');
+  initGame();
+  if (gameLoop) clearInterval(gameLoop);
+  gameLoop = setInterval(tick, speed);
+}
+
+function placeFood() {
+  let pos;
+  do { pos = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) }; }
+  while (snake.some(s => s.x === pos.x && s.y === pos.y));
+  food = pos;
+}
+
+function maybeSpawnPowerup() {
+  if (Math.random() < 0.3 && powerups.length < 2) {
+    const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+    let pos;
+    do { pos = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) }; }
+    while (snake.some(s => s.x === pos.x && s.y === pos.y) || (food && food.x === pos.x && food.y === pos.y));
+    powerups.push({ ...pos, ...type });
+    setTimeout(() => { powerups = powerups.filter(p => !(p.x === pos.x && p.y === pos.y)); }, 8000);
+  }
+}
+
+function activatePowerup(type) {
+  if (PUTimers[type]) clearTimeout(PUTimers[type]);
+  activePUs[type] = true;
+  document.getElementById(`pu-${type}`)?.classList.add('active');
+
+  const pu = POWERUP_TYPES.find(p => p.type === type);
+  const dur = pu ? pu.duration : 5000;
+
+  if (type === 'shield') shieldActive = true;
+  if (type === 'multi') multiActive = true;
+  if (type === 'slow') { slowActive = true; resetSpeed(); }
+  if (type === 'speed') resetSpeed();
+
+  PUTimers[type] = setTimeout(() => {
+    delete activePUs[type];
+    document.getElementById(`pu-${type}`)?.classList.remove('active');
+    if (type === 'shield') shieldActive = false;
+    if (type === 'multi') multiActive = false;
+    if (type === 'slow') { slowActive = false; resetSpeed(); }
+    if (type === 'speed') resetSpeed();
+  }, dur);
+}
+
+function resetSpeed() {
+  clearInterval(gameLoop);
+  let spd = speed;
+  if (activePUs['speed']) spd = Math.max(60, speed * 0.5);
+  if (activePUs['slow']) spd = speed * 1.8;
+  gameLoop = setInterval(tick, spd);
+}
+
+function tick() {
+  if (paused || dead) return;
+  dir = { ...nextDir };
+
+  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+  // Wall collision
+  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+    if (shieldActive) { head.x = (head.x + COLS) % COLS; head.y = (head.y + ROWS) % ROWS; shieldActive = false; delete activePUs['shield']; document.getElementById('pu-shield')?.classList.remove('active'); }
+    else { endGame(); return; }
+  }
+
+  // Self collision
+  if (snake.some(s => s.x === head.x && s.y === head.y)) {
+    if (shieldActive) { shieldActive = false; delete activePUs['shield']; document.getElementById('pu-shield')?.classList.remove('active'); }
+    else { endGame(); return; }
+  }
+
+  snake.unshift(head);
+
+  // Eat food
+  if (head.x === food.x && head.y === food.y) {
+    const pts = (multiActive ? 20 : 10) * level;
+    score += pts;
+    updateUI();
+    placeFood();
+    if (score > 0 && score % (level * 100) === 0) levelUp();
+    if (Math.random() < 0.25) maybeSpawnPowerup();
+  } else { snake.pop(); }
+
+  // Eat powerup
+  const puIdx = powerups.findIndex(p => p.x === head.x && p.y === head.y);
+  if (puIdx !== -1) {
+    activatePowerup(powerups[puIdx].type);
+    score += 5 * level;
+    updateUI();
+    powerups.splice(puIdx, 1);
+  }
+
+  draw();
+}
+
+function levelUp() {
+  level++;
+  speed = Math.max(60, 150 - (level - 1) * 12);
+  document.getElementById('level-badge').textContent = `LEVEL ${level}`;
+  document.getElementById('level-badge').style.borderColor = 'var(--neon3)';
+  document.getElementById('level-badge').style.color = 'var(--neon3)';
+  setTimeout(() => {
+    document.getElementById('level-badge').style.borderColor = '';
+    document.getElementById('level-badge').style.color = '';
+  }, 1500);
+  resetSpeed();
+}
+
+function endGame() {
+  dead = true;
+  clearInterval(gameLoop);
+  const best = parseInt(localStorage.getItem('snake_best') || '0');
+  if (score > best) localStorage.setItem('snake_best', score);
+  document.getElementById('best').textContent = Math.max(score, best);
+
+  const ov = document.getElementById('overlay');
+  ov.classList.remove('hidden');
+  document.getElementById('ov-title').textContent = 'GAME OVER';
+  document.getElementById('ov-sub').textContent = `LEVEL ${level} REACHED`;
+  const osEl = document.getElementById('ov-score');
+  osEl.style.display = 'block';
+  osEl.textContent = score;
+  document.getElementById('ov-btn').textContent = '↺ PLAY AGAIN';
+
+  // Update global stats
+  try {
+    const s = JSON.parse(localStorage.getItem('nexus_global_stats') || '{}');
+    s.gamesPlayed = (s.gamesPlayed || 0) + 1;
+    localStorage.setItem('nexus_global_stats', JSON.stringify(s));
+  } catch(e) {}
+}
+
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('level-display').textContent = level;
+  const best = Math.max(score, parseInt(localStorage.getItem('snake_best') || '0'));
+  document.getElementById('best').textContent = best;
+}
+
+// Drawing
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background
+  ctx.fillStyle = '#050810';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,45,120,0.04)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= COLS; x++) { ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,canvas.height); ctx.stroke(); }
+  for (let y = 0; y <= ROWS; y++) { ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(canvas.width,y*CELL); ctx.stroke(); }
+
+  // Food (glowing)
+  const foodGlow = ctx.createRadialGradient(food.x*CELL+CELL/2, food.y*CELL+CELL/2, 2, food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL);
+  foodGlow.addColorStop(0, '#00c8ff'); foodGlow.addColorStop(1, 'transparent');
+  ctx.fillStyle = foodGlow;
+  ctx.beginPath(); ctx.arc(food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#00c8ff';
+  ctx.shadowColor = '#00c8ff'; ctx.shadowBlur = 15;
+  ctx.beginPath(); ctx.arc(food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL/2-2, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Powerups
+  for (const pu of powerups) {
+    ctx.shadowColor = pu.color; ctx.shadowBlur = 12;
+    ctx.font = `${CELL}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(pu.icon, pu.x*CELL+CELL/2, pu.y*CELL+CELL/2);
+    ctx.shadowBlur = 0;
+  }
+
+  // Snake
+  for (let i = snake.length - 1; i >= 0; i--) {
+    const seg = snake[i];
+    const t = i / snake.length;
+    const isHead = i === 0;
+    const r = isHead ? 255 : Math.round(192 - t * 100);
+    const g = isHead ? 45 : Math.round(26 - t * 10);
+    const b = isHead ? 120 : Math.round(85 - t * 50);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    if (isHead) { ctx.shadowColor = COLORS.head; ctx.shadowBlur = 20; }
+    else { ctx.shadowBlur = 0; }
+    const pad = isHead ? 1 : 2;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(seg.x*CELL+pad, seg.y*CELL+pad, CELL-pad*2, CELL-pad*2, 4)
+                   : ctx.rect(seg.x*CELL+pad, seg.y*CELL+pad, CELL-pad*2, CELL-pad*2);
+    ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+
+  // Shield aura
+  if (shieldActive) {
+    const h = snake[0];
+    ctx.strokeStyle = '#00ff9d'; ctx.lineWidth = 3; ctx.shadowColor = '#00ff9d'; ctx.shadowBlur = 15;
+    ctx.beginPath(); ctx.arc(h.x*CELL+CELL/2, h.y*CELL+CELL/2, CELL, 0, Math.PI*2); ctx.stroke();
+    ctx.shadowBlur = 0; ctx.lineWidth = 1;
+  }
+}
+
+// Input
+document.addEventListener('keydown', e => {
+  const map = {ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},
+               KeyW:{x:0,y:-1},KeyS:{x:0,y:1},KeyA:{x:-1,y:0},KeyD:{x:1,y:0}};
+  if (e.code === 'Space') { e.preventDefault(); if (!dead) paused = !paused; return; }
+  const d = map[e.code];
+  if (d && !(d.x === -dir.x && d.y === -dir.y)) { e.preventDefault(); nextDir = d; }
+});
+
+// Touch support
+let touchStart = null;
+canvas.addEventListener('touchstart', e => { touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY }; });
+canvas.addEventListener('touchend', e => {
+  if (!touchStart) return;
+  const dx = e.changedTouches[0].clientX - touchStart.x;
+  const dy = e.changedTouches[0].clientY - touchStart.y;
+  if (Math.abs(dx) > Math.abs(dy)) nextDir = dx > 0 ? {x:1,y:0} : {x:-1,y:0};
+  else nextDir = dy > 0 ? {x:0,y:1} : {x:0,y:-1};
+  touchStart = null;
+});
+
+// Init best score display
+document.getElementById('best').textContent = localStorage.getItem('snake_best') || 0;
+draw();
+</script>
+</body>
+</html>
